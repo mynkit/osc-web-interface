@@ -3,6 +3,8 @@ import logging
 from pythonosc.dispatcher import Dispatcher
 from pythonosc import udp_client, osc_server
 import json
+from math import sqrt, degrees
+import numpy as np
 
 client_to_tidal = udp_client.SimpleUDPClient('127.0.0.1', 6060)
 client_to_tidalm = udp_client.SimpleUDPClient('127.0.0.1', 6061)
@@ -12,6 +14,17 @@ forestNode = 1000
 rainNode = 1001
 backgroundNode = 1002
 leavesNode = 1003
+
+def send_position(message):
+    s_name = message['type']
+    x = message['x']
+    y = message['y']
+    dis = 2 * sqrt((x-0.5)**2 + (y-0.5)**2)
+    theta = (90 - degrees(np.angle((x-0.5) + (y-0.5)*1j))) / 180
+    print(f'{s_name}Dis: {dis}, {s_name}Theta: {theta}')
+    client_to_tidalm.send_message('/ctrl', [f'{s_name}Dis', dis])
+    client_to_tidalm.send_message('/ctrl', [f'{s_name}Theta', theta])
+
 
 class Websocket_Server():
 
@@ -48,6 +61,8 @@ class Websocket_Server():
                 client_to_sc.send_message('/n_set', [backgroundNode, 'amp', message['value']])
             if message['type']=='pond':
                 client_to_tidal.send_message('/ctrl', ['pond', message['value']])
+            if message['type'] in ['synth', 'bird1', 'bird2', 'dove', 'crow']:
+                send_position(message)
     
     # サーバーを起動する
     def run(self):

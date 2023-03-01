@@ -75,7 +75,7 @@ const Interface: React.FC = () => {
   const [isDrag1, setIsDrag1] = useState(false);
   const [isDrag2, setIsDrag2] = useState(false);
   const [isDrag3, setIsDrag3] = useState(false);
-  const [bird1XY, setBird1XY] = useState<XY>({x: -cageWidth/2, y: 0})
+  const [doveXY, setDoveXY] = useState<XY>({x: -cageWidth/2, y: 0})
   const [bird2XY, setBird2XY] = useState<XY>({x: cageWidth/2 - iconSize, y: 0})
   const [synthXY, setSynthXY] = useState<XY>({x: cageWidth/2 - iconSize, y: cageWidth - iconSize})
   const handleRainChange = (event: Event, value: number | number[], activeThumb: number) => {
@@ -92,8 +92,8 @@ const Interface: React.FC = () => {
   }
   const handleDrag1 = (event: any, data: any) => {
     if (data.x>minX && data.x<maxX && data.y>minY && data.y<maxY){
-      setBird1XY({x: data.x, y: data.y});
-      sendJsonMessage({"type":"bird1","x": map(data.x, minX, maxX, 0, 1),"y": map(data.y, minY, maxY, 0, 1)});
+      setDoveXY({x: data.x, y: data.y});
+      sendJsonMessage({"type":"dove","x": map(data.x, minX, maxX, 0, 1),"y": map(data.y, minY, maxY, 0, 1)});
     }
   }
   const handleDrag2 = (event: any, data: any) => {
@@ -129,8 +129,8 @@ const Interface: React.FC = () => {
       if (dataParsed.type==='road') {
         setRoadValue(dataParsed['value']*100);
       }
-      if (dataParsed.type==='bird1' && !isDrag1) {
-        setBird1XY({x: map(dataParsed['x'], 0, 1, minX, maxX), y: map(dataParsed['y'], 0, 1, minY, maxY)});
+      if (dataParsed.type==='dove' && !isDrag1) {
+        setDoveXY({x: map(dataParsed['x'], 0, 1, minX, maxX), y: map(dataParsed['y'], 0, 1, minY, maxY)});
       }
       if (dataParsed.type==='bird2' && !isDrag2) {
         setBird2XY({x: map(dataParsed['x'], 0, 1, minX, maxX), y: map(dataParsed['y'], 0, 1, minY, maxY)});
@@ -185,7 +185,7 @@ const Interface: React.FC = () => {
           height: cageWidth,
         }}/>
         <Draggable
-          position={{x: bird1XY.x, y: bird1XY.y}}
+          position={{x: doveXY.x, y: doveXY.y}}
           nodeRef={nodeRef1}
           onStart={()=>{setIsDrag1(true)}}
           onStop={()=>{setIsDrag1(false)}}
