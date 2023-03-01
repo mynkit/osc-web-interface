@@ -9,7 +9,13 @@ npm i
 ```
 
 ```sh
-REACT_APP_PRIVATE_IP={privatre ip} HOST=0.0.0.0 npm start
+REACT_APP_PRIVATE_IP={private ip} HOST=0.0.0.0 npm start
+```
+
+private ipの取得(Mac)
+
+```sh
+ifconfig | grep "inet 192.168." | awk '{print $2}'
 ```
 
 ## websocket server & osc sender
