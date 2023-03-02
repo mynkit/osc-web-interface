@@ -128,9 +128,15 @@ const Interface: React.FC = () => {
       sendJsonMessage({"type":"synth","x": map(data.x, minX, maxX, 0, 1),"y": yNormed,"isMute": isMute ? 1 : 0, "value": 1});
     }
   }
-  // useEffect(() => {
-  //   console.log(`privateIp: ${privateIp}`);
-  // }, [privateIp])
+  useEffect(() => {
+    const preventDefault = (e: any) => e.preventDefault();
+    if (isDrag1 || isDrag2 || isDrag3) {
+      document.addEventListener('touchmove', preventDefault, {passive: false});
+    } else {
+      document.removeEventListener('touchmove', preventDefault, false);
+    }
+    return () => document.removeEventListener('touchmove', preventDefault, false);
+  }, [isDrag1, isDrag2, isDrag3])
   useEffect(() => {
     sendJsonMessage({"type":"access"});
   }, [])
