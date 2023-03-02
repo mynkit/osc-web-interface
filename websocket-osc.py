@@ -5,7 +5,8 @@ from pythonosc import udp_client, osc_server
 import json
 from math import sqrt, degrees
 import numpy as np
-import pandas as pd
+import os
+import json
 
 client_to_tidal = udp_client.SimpleUDPClient('127.0.0.1', 6060)
 client_to_tidalm = udp_client.SimpleUDPClient('127.0.0.1', 6061)
@@ -40,7 +41,6 @@ class Websocket_Server():
             loglevel=logging.DEBUG,
         )
         self.client_ids = []
-        self.message_logs_df = pd.DataFrame()
 
     # クライアント接続時に呼ばれる関数
     def new_client(self, client, server):
@@ -52,19 +52,28 @@ class Websocket_Server():
         print("client({}) disconnected".format(client['id']))
         self.client_ids.remove(client['id'])
 
+
     # クライアントからメッセージを受信したときに呼ばれる関数
     def message_received(self, client, server, message):
         print("client({}) said: {}".format(client['id'], message))
         message = json.loads(message)
-        self.message_logs_df = pd.concat([self.message_logs_df, pd.json_normalize(message)]).drop_duplicates(subset=['type'], keep='last')
         if message['type']=='access':
-            # クライアントIDは新たな接続者のみに返す
+            # クライアントID
             message['connectionId'] = client['id']
             self.server.send_message(client, json.dumps(message))
-            print('### self.client_ids ###')
+            # 今の音の状態
+            sound_state = {}
+            state_file_path = 'state/sound_state.json'
+            if os.path.isfile(state_file_path):
+              with open('state/sound_state.json') as f:
+                  sound_state = json.load(f)
+              sound_state_msg = {}
+              for k in sound_state.keys():
+                sound_state_msg = {'type': k}
+                sound_state_msg.update(sound_state[k])
+                self.server.send_message(client, json.dumps(sound_state_msg))
+            print('### all client_ids ###')
             print(self.client_ids)
-            print('### self.message_logs ###')
-            # print(self.message_logs_df.to_dict())
         else:
             # 全クライアントにメッセージを送信
             self.server.send_message_to_all(json.dumps(message))
@@ -88,7 +97,8 @@ class Websocket_Server():
         self.server.set_fn_message_received(self.message_received) 
         self.server.run_forever()
 
-IP_ADDR = "0.0.0.0" # IPアドレスを指定
-PORT=9001 # ポートを指定
-ws_server = Websocket_Server(IP_ADDR, PORT)
-ws_server.run()
+if __name__ == '__main__':
+  IP_ADDR = os.environ.get('REACT_APP_PRIVATE_IP', "0.0.0.0") # IPアドレスを指定
+  PORT=9001 # ポートを指定
+  ws_server = Websocket_Server(IP_ADDR, PORT)
+  ws_server.run()

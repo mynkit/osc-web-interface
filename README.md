@@ -9,7 +9,11 @@ npm i
 ```
 
 ```sh
-REACT_APP_PRIVATE_IP={private ip} HOST=0.0.0.0 npm start
+cp .env.example .env # Then edit the `.env` file.
+```
+
+```sh
+HOST=0.0.0.0 npm start
 ```
 
 private ipの取得(Mac)
@@ -28,4 +32,10 @@ pipenv sync
 
 ```sh
 pipenv run python websocket-osc.py
+```
+
+## state manager(websocket client)
+
+```sh
+pipenv run python state_manage.py
 ```
