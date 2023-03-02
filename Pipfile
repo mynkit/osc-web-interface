@@ -7,6 +7,7 @@ name = "pypi"
 python-osc = "*"
 websocket-server = "*"
 numpy = "*"
+pandas = "*"
 
 [dev-packages]
 

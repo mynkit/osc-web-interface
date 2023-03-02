@@ -5,6 +5,7 @@ from pythonosc import udp_client, osc_server
 import json
 from math import sqrt, degrees
 import numpy as np
+import pandas as pd
 
 client_to_tidal = udp_client.SimpleUDPClient('127.0.0.1', 6060)
 client_to_tidalm = udp_client.SimpleUDPClient('127.0.0.1', 6061)
@@ -19,11 +20,15 @@ def send_position(message):
     s_name = message['type']
     x = message['x']
     y = message['y']
+    amp = message['value']
+    isMute = message['isMute']
     dis = 2 * sqrt((x-0.5)**2 + (y-0.5)**2)
     theta = (90 - degrees(np.angle((x-0.5) + (y-0.5)*1j))) / 180
-    print(f'{s_name}Dis: {dis}, {s_name}Theta: {theta}')
+    print(f'{s_name}Dis: {dis}, {s_name}Theta: {theta}, {s_name}IsMute: {isMute}, {s_name}Amp: {amp}')
     client_to_tidalm.send_message('/ctrl', [f'{s_name}Dis', dis])
     client_to_tidalm.send_message('/ctrl', [f'{s_name}Theta', theta])
+    client_to_tidalm.send_message('/ctrl', [f'{s_name}Amp', amp])
+    client_to_tidalm.send_message('/ctrl', [f'{s_name}IsMute', isMute])
 
 
 class Websocket_Server():
@@ -34,23 +39,32 @@ class Websocket_Server():
             host=host,
             loglevel=logging.DEBUG,
         )
+        self.client_ids = []
+        self.message_logs_df = pd.DataFrame()
 
     # クライアント接続時に呼ばれる関数
     def new_client(self, client, server):
         print("new client connected and was given id {}".format(client['id']))
+        self.client_ids.append(client['id'])
 
     # クライアント切断時に呼ばれる関数
     def client_left(self, client, server):
         print("client({}) disconnected".format(client['id']))
+        self.client_ids.remove(client['id'])
 
     # クライアントからメッセージを受信したときに呼ばれる関数
     def message_received(self, client, server, message):
         print("client({}) said: {}".format(client['id'], message))
         message = json.loads(message)
+        self.message_logs_df = pd.concat([self.message_logs_df, pd.json_normalize(message)]).drop_duplicates(subset=['type'], keep='last')
         if message['type']=='access':
             # クライアントIDは新たな接続者のみに返す
             message['connectionId'] = client['id']
             self.server.send_message(client, json.dumps(message))
+            print('### self.client_ids ###')
+            print(self.client_ids)
+            print('### self.message_logs ###')
+            # print(self.message_logs_df.to_dict())
         else:
             # 全クライアントにメッセージを送信
             self.server.send_message_to_all(json.dumps(message))

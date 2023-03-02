@@ -4,6 +4,7 @@ import Slider from '@mui/material/Slider';
 import Grid from '@mui/material/Grid';
 import Box from '@mui/material/Box';
 import { BsCloudRainHeavy, BsSoundwave } from 'react-icons/bs';
+import { BiVolumeMute } from 'react-icons/bi';
 import { MdOutlineBubbleChart } from 'react-icons/md';
 import { GiModernCity, GiHummingbird, GiSeagull, GiSwallow } from 'react-icons/gi';
 import { FaDove, FaCrow } from 'react-icons/fa'
@@ -17,20 +18,8 @@ type XY = {
 }
 
 const map = (value: number, fromMin: number, fromMax: number, toMin: number, toMax: number) => {
-
-  let result = 0;
-
-  result = (value <= fromMin)
-    ? toMin : (value >= fromMax)
-      ? toMax : (() => {
-
-        let ratio = (toMax - toMin) / (fromMax - fromMin);
-        return (value - fromMin) * ratio + toMin;
-
-      })();
-
-  return result;
-
+  let ratio = (toMax - toMin) / (fromMax - fromMin);
+  return (value - fromMin) * ratio + toMin;
 };
 
 const Interface: React.FC = () => {
@@ -65,6 +54,7 @@ const Interface: React.FC = () => {
   const maxX = cageWidth/2 - iconSize;
   const minY = 0;
   const maxY = cageWidth - iconSize;
+  const muteZoneHeight = cageWidth*0.2;
 
   // stateたち
   const [connectionId, setConnectionId] = useState('');
@@ -75,6 +65,9 @@ const Interface: React.FC = () => {
   const [isDrag1, setIsDrag1] = useState(false);
   const [isDrag2, setIsDrag2] = useState(false);
   const [isDrag3, setIsDrag3] = useState(false);
+  const [isDoveMute, setIsDoveMute] = useState(false);
+  const [isBird2Mute, setIsBird2Mute] = useState(false);
+  const [isSynthMute, setIsSynthMute] = useState(false);
   const [doveXY, setDoveXY] = useState<XY>({x: -cageWidth/2, y: 0})
   const [bird2XY, setBird2XY] = useState<XY>({x: cageWidth/2 - iconSize, y: 0})
   const [synthXY, setSynthXY] = useState<XY>({x: cageWidth/2 - iconSize, y: cageWidth - iconSize})
@@ -91,26 +84,53 @@ const Interface: React.FC = () => {
     sendJsonMessage({"type":"road","value":value as number / 100});
   }
   const handleDrag1 = (event: any, data: any) => {
-    if (data.x>minX && data.x<maxX && data.y>minY && data.y<maxY){
+    if (data.x>minX && data.x<maxX && data.y>minY && data.y<maxY+muteZoneHeight){
       setDoveXY({x: data.x, y: data.y});
-      sendJsonMessage({"type":"dove","x": map(data.x, minX, maxX, 0, 1),"y": map(data.y, minY, maxY, 0, 1)});
+      let yNormed = map(data.y, minY, maxY, 0, 1);
+      let isMute = false;
+      if (yNormed - 1 > 0.5*muteZoneHeight/cageWidth) {
+        setIsDoveMute(true);
+        isMute = true;
+      } else {
+        setIsDoveMute(false);
+        isMute = false;
+      }
+      sendJsonMessage({"type":"dove","x": map(data.x, minX, maxX, 0, 1),"y": map(data.y, minY, maxY, 0, 1),"isMute": isMute ? 1 : 0, "value": 1});
     }
   }
   const handleDrag2 = (event: any, data: any) => {
-    if (data.x>minX && data.x<maxX && data.y>minY && data.y<maxY){
+    if (data.x>minX && data.x<maxX && data.y>minY && data.y<maxY+muteZoneHeight){
       setBird2XY({x: data.x, y: data.y});
-      sendJsonMessage({"type":"bird2","x": map(data.x, minX, maxX, 0, 1),"y": map(data.y, minY, maxY, 0, 1)});
+      let yNormed = map(data.y, minY, maxY, 0, 1);
+      let isMute = false;
+      if (yNormed - 1 > 0.5*muteZoneHeight/cageWidth) {
+        setIsBird2Mute(true);
+        isMute = true;
+      } else {
+        setIsBird2Mute(false);
+        isMute = false;
+      }
+      sendJsonMessage({"type":"bird2","x": map(data.x, minX, maxX, 0, 1),"y": map(data.y, minY, maxY, 0, 1),"isMute": isMute ? 1 : 0, "value": 1});
     }
   }
   const handleDrag3 = (event: any, data: any) => {
-    if (data.x>minX && data.x<maxX && data.y>minY && data.y<maxY){
+    if (data.x>minX && data.x<maxX && data.y>minY && data.y<maxY+muteZoneHeight){
       setSynthXY({x: data.x, y: data.y});
-      sendJsonMessage({"type":"synth","x": map(data.x, minX, maxX, 0, 1),"y": map(data.y, minY, maxY, 0, 1)});
+      let yNormed = map(data.y, minY, maxY, 0, 1);
+      let isMute = false;
+      if (yNormed - 1 > 0.5*muteZoneHeight/cageWidth) {
+        setIsSynthMute(true);
+        isMute = true;
+      } else {
+        setIsSynthMute(false);
+        isMute = false;
+      }
+      sendJsonMessage({"type":"synth","x": map(data.x, minX, maxX, 0, 1),"y": yNormed,"isMute": isMute ? 1 : 0, "value": 1});
     }
   }
-  useEffect(() => {
-    console.log(`privateIp: ${privateIp}`);
-  }, [privateIp])
+  // useEffect(() => {
+  //   console.log(`privateIp: ${privateIp}`);
+  // }, [privateIp])
   useEffect(() => {
     sendJsonMessage({"type":"access"});
   }, [])
@@ -131,12 +151,15 @@ const Interface: React.FC = () => {
       }
       if (dataParsed.type==='dove' && !isDrag1) {
         setDoveXY({x: map(dataParsed['x'], 0, 1, minX, maxX), y: map(dataParsed['y'], 0, 1, minY, maxY)});
+        setIsDoveMute(dataParsed['isMute']);
       }
       if (dataParsed.type==='bird2' && !isDrag2) {
         setBird2XY({x: map(dataParsed['x'], 0, 1, minX, maxX), y: map(dataParsed['y'], 0, 1, minY, maxY)});
+        setIsBird2Mute(dataParsed['isMute']);
       }
       if (dataParsed.type==='synth' && !isDrag3) {
         setSynthXY({x: map(dataParsed['x'], 0, 1, minX, maxX), y: map(dataParsed['y'], 0, 1, minY, maxY)});
+        setIsSynthMute(dataParsed['isMute']);
       }
     }
   }, [lastMessage])
@@ -152,7 +175,7 @@ const Interface: React.FC = () => {
         </div>
       </div>
       <Box sx={{ width: '100%', paddingTop: '20px' }}>
-        <Grid container spacing={2} alignItems="center" style={{width: '450px', maxWidth: '50%', padding: '5px'}}>
+        <Grid container spacing={2} alignItems="center" style={{width: '450px', maxWidth: '50%', paddingTop: '5px', paddingBottom: '5px'}}>
           <Grid item>
             <BsCloudRainHeavy size={`2em`} color={'inherit'}/>
           </Grid>
@@ -160,16 +183,14 @@ const Interface: React.FC = () => {
             <Slider value={rainValue} onChange={handleRainChange} disabled={!sliderOn}/>
           </Grid>
         </Grid>
-        <Grid container spacing={2} alignItems="center" style={{width: '900px', maxWidth: '100%', padding: '5px'}}>
+        <Grid container spacing={2} alignItems="center" style={{width: '900px', maxWidth: '100%', paddingTop: '5px', paddingBottom: '5px'}}>
           <Grid item>
-            {/* <MdWaves size={`2em`} color={booting ? 'inherit' : '#bdbdbd'}/> */}
             <MdOutlineBubbleChart size={`2em`} color={'inherit'}/>
           </Grid>
           <Grid item xs>
             <Slider value={pondValue} onChange={handlePondChange} disabled={!sliderOn}/>
           </Grid>
           <Grid item>
-            {/* <BsRecordCircle size={`2em`} color={booting ? 'inherit' : '#bdbdbd'}/> */}
             <GiModernCity size={`2em`} color={'inherit'}/>
           </Grid>
           <Grid item xs>
@@ -184,6 +205,22 @@ const Interface: React.FC = () => {
           width: cageWidth,
           height: cageWidth,
         }}/>
+        <div style={{
+          position: 'absolute',
+          border: '1px solid #000000',
+          backgroundColor: '#f2f2f2',
+          top: cageWidth+20,
+          width: cageWidth,
+          height: muteZoneHeight,
+        }}/>
+        <div style={{
+          position: 'absolute',
+          fontSize: 0.7*iconSize,
+          top: cageWidth+muteZoneHeight/2+20-0.7*iconSize/2,
+          color: '#ccc',
+        }}>
+          <BiVolumeMute/>
+        </div>
         <Draggable
           position={{x: doveXY.x, y: doveXY.y}}
           nodeRef={nodeRef1}
@@ -193,7 +230,7 @@ const Interface: React.FC = () => {
           scale={1}
           handle='b'>
           <div ref={nodeRef1} style={{ position: 'absolute', fontSize: iconSize, cursor: 'pointer', width: '0' }}>
-            <b><FaDove/></b>
+            <b><FaDove color={isDoveMute ? '#999999' : 'inherit'}/></b>
           </div>
         </Draggable>
         <Draggable
@@ -205,7 +242,7 @@ const Interface: React.FC = () => {
           scale={1}
           handle='b'>
           <div ref={nodeRef2} style={{ position: 'absolute', fontSize: iconSize, cursor: 'pointer', width: '0' }}>
-            <b><GiHummingbird/></b>
+            <b><GiHummingbird color={isBird2Mute ? '#999999' : 'inherit'}/></b>
           </div>
         </Draggable>
         <Draggable
@@ -217,7 +254,7 @@ const Interface: React.FC = () => {
           scale={1}
           handle='b'>
           <div ref={nodeRef3} style={{ position: 'absolute', fontSize: iconSize, cursor: 'pointer', width: '0', textAlign: 'center' }}>
-            <b><BsSoundwave/></b>
+            <b><BsSoundwave color={isSynthMute ? '#999999' : 'inherit'}/></b>
           </div>
         </Draggable>
       </Grid>
