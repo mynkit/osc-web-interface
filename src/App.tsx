@@ -129,7 +129,7 @@ const Interface: React.FC = () => {
   const maxX = cageWidth/2 - iconSize;
   const minY = 0;
   const maxY = cageWidth - iconSize;
-  const muteZoneHeight = cageWidth*0.2;
+  const muteZoneHeight = cageWidth*0.4;
 
   // stateたち
   const [connectionId, setConnectionId] = useState('');
