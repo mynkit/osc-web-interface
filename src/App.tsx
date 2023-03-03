@@ -22,20 +22,45 @@ type MySketchProps = SketchProps & {
   pause: boolean;
   clear: boolean;
   rainFall: boolean;
+  underWater: boolean;
 };
 
 const sketch: Sketch<MySketchProps> = (p: P5CanvasInstance<MySketchProps>) => {
   let width: number = p.windowWidth;
   let height: number = p.windowHeight;
-  let rainCount: number = 10;
-  let maxRainCount: number = 10;
-  let rainLengths: number[] = (new Array<number>(maxRainCount).fill(0)).map((d) => {return p.map(Math.random(), 0, 1, height*0.1, height*0.3)});;
-  let xs: number[] = (new Array<number>(maxRainCount).fill(0)).map((d) => {return width*Math.random()});
-  let ys: number[] = (new Array<number>(maxRainCount).fill(0)).map((d) => {return height*Math.random()});
-  let speed: number = 1;
   let sizeTras: number = p.min(width, height) / 870;
   let pause: boolean = false;
   let clear: boolean = false;
+  // 雨
+  let rainCount: number = 10;
+  let maxRainCount: number = 10;
+  let rainLengths: number[] = (new Array<number>(maxRainCount).fill(0)).map((d) => {return p.map(Math.random(), 0, 1, height*0.05, height*0.3)});
+  let xs: number[] = (new Array<number>(maxRainCount).fill(0)).map((d) => {return width*Math.random()});
+  let ys: number[] = (new Array<number>(maxRainCount).fill(0)).map((d) => {return height*Math.random()});
+  let speed: number = 1;
+  // 泡
+  let awaCount: number = 10;
+  let maxAwaCount: number = 10;
+  let time = 0;
+  let vertexCount = 100;
+  let centerXs: number[] = (new Array<number>(maxAwaCount).fill(0)).map((d) => {return p.random(0, width)});
+  let centerYs: number[] = (new Array<number>(maxAwaCount).fill(0)).map((d) => {return p.random(0, height)});
+  let maxRadiuses: number[] = (new Array<number>(maxAwaCount).fill(0)).map((d) => {return p.random(p.min(width, height)/25, p.min(width, height)/5);});
+  let awaSpeeds: number[] = (new Array<number>(maxAwaCount).fill(0)).map((d) => {return p.random(1.01, 1.06)});
+  let rotateSpeeds: number[] = (new Array<number>(maxAwaCount).fill(0)).map((d) => {return p.random(0.0007, 0.003)});
+  let shapeSpeeds: number[] = (new Array<number>(maxAwaCount).fill(0)).map((d) => {return p.random(0.01, 0.05)});
+  let purupuruSpeeds: number[] = (new Array<number>(maxAwaCount).fill(0)).map((d) => {return p.random(0.1, 0.5)});
+  let trueCircles: number[] = (new Array<number>(maxAwaCount).fill(1));
+  let radiuses: number[] = (new Array<number>(maxAwaCount).fill(0));
+  const getTheta = (i: number) => {return 2.*p.PI*i/vertexCount;}
+  const getAwaX = (i: number, radius: number, centerX: number, purupuruSpeed: number, rotateSpeed: number, shapeSpeed: number) => {
+    let theta = getTheta(i);
+    return centerX + radius*0.01*(100.+p.map(p.noise(time*purupuruSpeed), 0, 1, 3, 5)*p.cos(p.noise(time*0.02)*10*p.noise(p.cos(theta+time*0.001),p.sin(theta+time*rotateSpeed),time*shapeSpeed)))*p.cos(theta);
+  }
+  const getAwaY = (i: number, radius: number, centerY: number, purupuruSpeed: number, rotateSpeed: number, shapeSpeed: number, trueCircle: number) => {
+    let theta = getTheta(i);
+    return centerY + radius*0.01*(100.+p.map(p.noise(time*purupuruSpeed), 0, 1, 3, 5)*p.cos(p.noise(time*0.02)*10*p.noise(p.cos(theta+time*0.001),p.sin(theta+time*rotateSpeed),time*shapeSpeed)))*p.sin(theta)*trueCircle;
+  }
 
   p.setup = () => {
     p.createCanvas(width, height);
@@ -56,6 +81,9 @@ const sketch: Sketch<MySketchProps> = (p: P5CanvasInstance<MySketchProps>) => {
     if (props.rainFall!==undefined) {
       rainCount = maxRainCount * props.rainFall;
     }
+    if (props.underWater!==undefined) {
+      awaCount = maxAwaCount * props.underWater;
+    }
   };
 
   p.draw = () => {
@@ -73,7 +101,7 @@ const sketch: Sketch<MySketchProps> = (p: P5CanvasInstance<MySketchProps>) => {
 
       if(ys[i]>height) {
         xs[i] = width*Math.random();
-        ys[i]=-rainLengths[i];
+        ys[i]=p.random(-rainLengths[i], 0);
       }
 
       newY = ys[i] + rainLengths[i];
@@ -82,7 +110,44 @@ const sketch: Sketch<MySketchProps> = (p: P5CanvasInstance<MySketchProps>) => {
 
       ys[i] = ys[i] + 100*speed;
     }
-
+    // 泡の描画
+    for (let i=0; i<awaCount; i++) {
+      for (let k=0; k<vertexCount; k++){
+        if (k < vertexCount-1) {
+          p.line(
+            getAwaX(k, radiuses[i], centerXs[i], purupuruSpeeds[i], rotateSpeeds[i], shapeSpeeds[i]),
+            getAwaY(k, radiuses[i], centerYs[i], purupuruSpeeds[i], rotateSpeeds[i], shapeSpeeds[i], trueCircles[i]),
+            getAwaX(k+1, radiuses[i], centerXs[i], purupuruSpeeds[i], rotateSpeeds[i], shapeSpeeds[i]),
+            getAwaY(k+1, radiuses[i], centerYs[i], purupuruSpeeds[i], rotateSpeeds[i], shapeSpeeds[i], trueCircles[i])
+          );
+        } else {
+          p.line(
+            getAwaX(k, radiuses[i], centerXs[i], purupuruSpeeds[i], rotateSpeeds[i], shapeSpeeds[i]),
+            getAwaY(k, radiuses[i], centerYs[i], purupuruSpeeds[i], rotateSpeeds[i], shapeSpeeds[i], trueCircles[i]),
+            getAwaX(0, radiuses[i], centerXs[i], purupuruSpeeds[i], rotateSpeeds[i], shapeSpeeds[i]),
+            getAwaY(0, radiuses[i], centerYs[i], purupuruSpeeds[i], rotateSpeeds[i], shapeSpeeds[i], trueCircles[i])
+          );
+        }
+      }
+      if(radiuses[i]<maxRadiuses[i]){
+        if(radiuses[i]<1){
+          radiuses[i]=1.5;
+        }else{
+          radiuses[i]*=awaSpeeds[i];
+        }
+      }else{
+        radiuses[i]=0.;
+        centerXs[i] = p.random(0, width);
+        centerYs[i] = p.random(0, height);
+        maxRadiuses[i] = p.random(p.min(width, height)/25, p.min(width, height)/5);
+        awaSpeeds[i] = p.random(1.01, 1.06);
+        rotateSpeeds[i] = p.random(0.0007, 0.003);
+        shapeSpeeds[i] = p.random(0.01, 0.03);
+        purupuruSpeeds[i] = p.random(0.001, 0.05);
+        trueCircles[i] = p.random(0.9, 1);
+      }
+    }
+    time++;
   }
 }
 
@@ -251,7 +316,7 @@ const Interface: React.FC = () => {
     <div>
       <div style={{position: 'relative', width: '100%'}}>
         <div style={{position: 'absolute'}}>
-          <ReactP5Wrapper sketch={sketch} speed={speed} pause={pause} clear={clear} rainFall={rainValue/100}></ReactP5Wrapper>
+          <ReactP5Wrapper sketch={sketch} speed={speed} pause={pause} clear={clear} rainFall={rainValue/100} underWater={pondValue/100}></ReactP5Wrapper>
         </div>
       </div>
       <div style={{padding: '10px'}}>
