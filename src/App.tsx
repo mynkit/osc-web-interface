@@ -11,6 +11,81 @@ import { FaDove, FaCrow } from 'react-icons/fa'
 import Draggable from 'react-draggable';
 import { useWindowDimensions } from './utils/windowDimensions';
 import './App.css';
+import {
+  P5CanvasInstance,
+  ReactP5Wrapper,
+  SketchProps,
+  Sketch
+} from "react-p5-wrapper";
+
+type MySketchProps = SketchProps & {
+  speed: number;
+  pause: boolean;
+  clear: boolean;
+  rainFall: boolean;
+};
+
+const sketch: Sketch<MySketchProps> = (p: P5CanvasInstance<MySketchProps>) => {
+  let width: number = p.windowWidth;
+  let height: number = p.windowHeight;
+  let rainCount: number = 10;
+  let maxRainCount: number = 10;
+  let rainLengths: number[] = (new Array<number>(maxRainCount).fill(0)).map((d) => {return p.map(Math.random(), 0, 1, height*0.1, height*0.3)});;
+  let xs: number[] = (new Array<number>(maxRainCount).fill(0)).map((d) => {return width*Math.random()});
+  let ys: number[] = (new Array<number>(maxRainCount).fill(0)).map((d) => {return height*Math.random()});
+  let speed: number = 2;
+  let sizeTras: number = p.min(width, height) / 870;
+  let pause: boolean = false;
+  let clear: boolean = false;
+
+  p.setup = () => {
+    p.createCanvas(width, height);
+    p.fill(0);
+    p.strokeWeight(p.min(sizeTras, 1)*0.5);
+  };
+
+  p.updateWithProps = (props: any) => {
+    if (props.speed) {
+      speed = props.speed;
+    }
+    if (props.pause!==undefined) {
+      pause = props.pause;
+    }
+    if (props.clear!==undefined) {
+      clear = props.clear;
+    }
+    if (props.rainFall!==undefined) {
+      rainCount = maxRainCount * props.rainFall;
+    }
+  };
+
+  p.draw = () => {
+    if (clear) {
+      p.clear(255, 255, 255, 255);
+      pause = true;
+      return;
+    }
+    if (pause) {return;}
+    p.clear(255, 255, 255, 255); // 前に描画したものをクリア
+    // 雨の描画
+    if (rainCount>maxRainCount){rainCount=maxRainCount;}
+    for (let i=0; i<rainCount; i++) {
+      let newY;
+
+      if(ys[i]>height) {
+        xs = (new Array<number>(maxRainCount).fill(0)).map((d) => {return width*Math.random()});
+        ys[i]=0;
+      }
+
+      newY = ys[i] + rainLengths[i];
+
+      p.line(xs[i], ys[i], xs[i], newY);
+
+      ys[i] = newY;
+    }
+
+  }
+}
 
 type XY = {
   x: number;
@@ -71,6 +146,9 @@ const Interface: React.FC = () => {
   const [doveXY, setDoveXY] = useState<XY>({x: -cageWidth/2, y: 0})
   const [bird2XY, setBird2XY] = useState<XY>({x: cageWidth/2 - iconSize, y: 0})
   const [synthXY, setSynthXY] = useState<XY>({x: cageWidth/2 - iconSize, y: cageWidth - iconSize})
+  const [speed, setspeed] = useState(1);
+  const [pause, setPause] = useState(false);
+  const [clear, setClear] = useState(false);
   const handleRainChange = (event: Event, value: number | number[], activeThumb: number) => {
     setRainValue(value as number);
     sendJsonMessage({"type":"rain","value":value as number / 100});
@@ -170,100 +248,110 @@ const Interface: React.FC = () => {
     }
   }, [lastMessage])
   return (
-    <div style={{padding: '10px'}}>
+    <div>
       <div style={{position: 'relative', width: '100%'}}>
-        <div style={{position: 'absolute', left: '10px'}}>
-          <span style={{fontSize: '10pt', color: 'red'}}>{connectionStatus==='Open' ? '': '接続が切れました。リロードしてください。'}</span>
-        </div>
-        <div style={{position: 'absolute', right: '10px'}}>
-          <span style={{fontSize: '10pt'}}>connectionId: </span>
-          {connectionId}
+        <div style={{position: 'absolute'}}>
+          <ReactP5Wrapper sketch={sketch} speed={speed} pause={pause} clear={clear} rainFall={rainValue/100}></ReactP5Wrapper>
         </div>
       </div>
-      <Box sx={{ width: '100%', paddingTop: '20px' }}>
-        <Grid container spacing={2} alignItems="center" style={{width: '450px', maxWidth: '50%', paddingTop: '5px', paddingBottom: '5px'}}>
-          <Grid item>
-            <BsCloudRainHeavy size={`2em`} color={'inherit'}/>
-          </Grid>
-          <Grid item xs>
-            <Slider value={rainValue} onChange={handleRainChange} disabled={!sliderOn}/>
-          </Grid>
-        </Grid>
-        <Grid container spacing={2} alignItems="center" style={{width: '900px', maxWidth: '100%', paddingTop: '5px', paddingBottom: '5px'}}>
-          <Grid item>
-            <MdOutlineBubbleChart size={`2em`} color={'inherit'}/>
-          </Grid>
-          <Grid item xs>
-            <Slider value={pondValue} onChange={handlePondChange} disabled={!sliderOn}/>
-          </Grid>
-          <Grid item>
-            <GiModernCity size={`2em`} color={'inherit'}/>
-          </Grid>
-          <Grid item xs>
-            <Slider value={roadValue} onChange={handleRoadChange} disabled={!sliderOn}/>
-          </Grid>
-        </Grid>
-      </Box>
-      <Grid container justifyContent='center' style={{width: '100%', height: cageWidth, position: 'relative', padding: '20px'}}>
-        <div style={{
-          position: 'absolute',
-          border: '1px solid #000000',
-          width: cageWidth,
-          height: cageWidth,
-        }}/>
-        <div style={{
-          position: 'absolute',
-          border: '1px solid #000000',
-          backgroundColor: '#f2f2f2',
-          top: cageWidth+20,
-          width: cageWidth,
-          height: muteZoneHeight,
-        }}/>
-        <div style={{
-          position: 'absolute',
-          fontSize: 0.7*iconSize,
-          top: cageWidth+muteZoneHeight/2+20-0.7*iconSize/2,
-          color: '#ccc',
-        }}>
-          <BiVolumeMute/>
+      <div style={{padding: '10px'}}>
+        <div style={{position: 'relative', width: '100%'}}>
+          <div style={{position: 'absolute', left: '10px'}}>
+            <span style={{fontSize: '10pt', color: 'red'}}>{connectionStatus==='Open' ? '': '接続が切れました。リロードしてください。'}</span>
+          </div>
+          <div style={{position: 'absolute', right: '10px'}}>
+            <span style={{fontSize: '10pt'}}>connectionId: </span>
+            {connectionId}
+          </div>
         </div>
-        <Draggable
-          position={{x: doveXY.x, y: doveXY.y}}
-          nodeRef={nodeRef1}
-          onStart={()=>{setIsDrag1(true)}}
-          onStop={()=>{setIsDrag1(false)}}
-          onDrag={handleDrag1}
-          scale={1}
-          handle='b'>
-          <div ref={nodeRef1} style={{ position: 'absolute', fontSize: iconSize, cursor: 'pointer', width: '0' }}>
-            <b><FaDove color={isDoveMute ? '#999999' : 'inherit'}/></b>
+        <Box sx={{ width: '100%', paddingTop: '20px' }}>
+          <Grid container spacing={2} alignItems="center" style={{width: '450px', maxWidth: '50%', paddingTop: '5px', paddingBottom: '5px'}}>
+            <Grid item>
+              <BsCloudRainHeavy size={`2em`} color={'inherit'}/>
+            </Grid>
+            <Grid item xs>
+              <Slider value={rainValue} onChange={handleRainChange} disabled={!sliderOn}/>
+            </Grid>
+          </Grid>
+          <Grid container spacing={2} alignItems="center" style={{width: '900px', maxWidth: '100%', paddingTop: '5px', paddingBottom: '5px'}}>
+            <Grid item>
+              <MdOutlineBubbleChart size={`2em`} color={'inherit'}/>
+            </Grid>
+            <Grid item xs>
+              <Slider value={pondValue} onChange={handlePondChange} disabled={!sliderOn}/>
+            </Grid>
+            <Grid item>
+              <GiModernCity size={`2em`} color={'inherit'}/>
+            </Grid>
+            <Grid item xs>
+              <Slider value={roadValue} onChange={handleRoadChange} disabled={!sliderOn}/>
+            </Grid>
+          </Grid>
+        </Box>
+        <Grid container justifyContent='center' style={{width: '100%', height: cageWidth, position: 'relative', padding: '20px'}}>
+          <div style={{
+            position: 'absolute',
+            border: '1px solid #000000',
+            width: cageWidth,
+            height: cageWidth,
+          }}/>
+          <div style={{
+            position: 'absolute',
+            borderBottom: '1px solid #000000',
+            borderLeft: '1px solid #000000',
+            borderRight: '1px solid #000000',
+            backgroundColor: 'rgb(240, 240, 240)',
+            top: cageWidth+20,
+            width: cageWidth,
+            height: muteZoneHeight,
+            zIndex: -1,
+          }}/>
+          <div style={{
+            position: 'absolute',
+            fontSize: 0.7*iconSize,
+            top: cageWidth+muteZoneHeight/2+20-0.7*iconSize/2,
+            color: '#ccc',
+          }}>
+            <BiVolumeMute/>
           </div>
-        </Draggable>
-        <Draggable
-          position={{x: bird2XY.x, y: bird2XY.y}}
-          nodeRef={nodeRef2}
-          onStart={()=>{setIsDrag2(true)}}
-          onStop={()=>{setIsDrag2(false)}}
-          onDrag={handleDrag2}
-          scale={1}
-          handle='b'>
-          <div ref={nodeRef2} style={{ position: 'absolute', fontSize: iconSize, cursor: 'pointer', width: '0' }}>
-            <b><GiHummingbird color={isBird2Mute ? '#999999' : 'inherit'}/></b>
-          </div>
-        </Draggable>
-        <Draggable
-          position={{x: synthXY.x, y: synthXY.y}}
-          nodeRef={nodeRef3}
-          onStart={()=>{setIsDrag3(true)}}
-          onStop={()=>{setIsDrag3(false)}}
-          onDrag={handleDrag3}
-          scale={1}
-          handle='b'>
-          <div ref={nodeRef3} style={{ position: 'absolute', fontSize: iconSize, cursor: 'pointer', width: '0', textAlign: 'center' }}>
-            <b><BsSoundwave color={isSynthMute ? '#999999' : 'inherit'}/></b>
-          </div>
-        </Draggable>
-      </Grid>
+          <Draggable
+            position={{x: doveXY.x, y: doveXY.y}}
+            nodeRef={nodeRef1}
+            onStart={()=>{setIsDrag1(true)}}
+            onStop={()=>{setIsDrag1(false)}}
+            onDrag={handleDrag1}
+            scale={1}
+            handle='b'>
+            <div ref={nodeRef1} style={{ position: 'absolute', fontSize: iconSize, cursor: 'pointer', width: '0' }}>
+              <b><FaDove color={isDoveMute ? '#999999' : 'inherit'}/></b>
+            </div>
+          </Draggable>
+          <Draggable
+            position={{x: bird2XY.x, y: bird2XY.y}}
+            nodeRef={nodeRef2}
+            onStart={()=>{setIsDrag2(true)}}
+            onStop={()=>{setIsDrag2(false)}}
+            onDrag={handleDrag2}
+            scale={1}
+            handle='b'>
+            <div ref={nodeRef2} style={{ position: 'absolute', fontSize: iconSize, cursor: 'pointer', width: '0' }}>
+              <b><GiHummingbird color={isBird2Mute ? '#999999' : 'inherit'}/></b>
+            </div>
+          </Draggable>
+          <Draggable
+            position={{x: synthXY.x, y: synthXY.y}}
+            nodeRef={nodeRef3}
+            onStart={()=>{setIsDrag3(true)}}
+            onStop={()=>{setIsDrag3(false)}}
+            onDrag={handleDrag3}
+            scale={1}
+            handle='b'>
+            <div ref={nodeRef3} style={{ position: 'absolute', fontSize: iconSize, cursor: 'pointer', width: '0', textAlign: 'center' }}>
+              <b><BsSoundwave color={isSynthMute ? '#999999' : 'inherit'}/></b>
+            </div>
+          </Draggable>
+        </Grid>
+      </div>
     </div>
   )
 }
