@@ -65,7 +65,7 @@ const sketch: Sketch<MySketchProps> = (p: P5CanvasInstance<MySketchProps>) => {
   p.setup = () => {
     p.createCanvas(width, height);
     p.fill(0);
-    p.strokeWeight(p.min(sizeTras, 1)*0.3);
+    p.strokeWeight(p.min(sizeTras, 1)*0.4);
   };
 
   p.updateWithProps = (props: any) => {
@@ -303,6 +303,7 @@ const Interface: React.FC = () => {
         setIsDoveMute(dataParsed['isMute']);
       }
       if (dataParsed.type==='bird2' && !isDrag2) {
+        console.log('setBird2XY')
         setBird2XY({x: map(dataParsed['x'], 0, 1, minX, maxX), y: map(dataParsed['y'], 0, 1, minY, maxY)});
         setIsBird2Mute(dataParsed['isMute']);
       }
