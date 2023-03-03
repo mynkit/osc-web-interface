@@ -32,7 +32,7 @@ const sketch: Sketch<MySketchProps> = (p: P5CanvasInstance<MySketchProps>) => {
   let rainLengths: number[] = (new Array<number>(maxRainCount).fill(0)).map((d) => {return p.map(Math.random(), 0, 1, height*0.1, height*0.3)});;
   let xs: number[] = (new Array<number>(maxRainCount).fill(0)).map((d) => {return width*Math.random()});
   let ys: number[] = (new Array<number>(maxRainCount).fill(0)).map((d) => {return height*Math.random()});
-  let speed: number = 2;
+  let speed: number = 1;
   let sizeTras: number = p.min(width, height) / 870;
   let pause: boolean = false;
   let clear: boolean = false;
@@ -40,7 +40,7 @@ const sketch: Sketch<MySketchProps> = (p: P5CanvasInstance<MySketchProps>) => {
   p.setup = () => {
     p.createCanvas(width, height);
     p.fill(0);
-    p.strokeWeight(p.min(sizeTras, 1)*0.5);
+    p.strokeWeight(p.min(sizeTras, 1)*0.3);
   };
 
   p.updateWithProps = (props: any) => {
@@ -72,15 +72,15 @@ const sketch: Sketch<MySketchProps> = (p: P5CanvasInstance<MySketchProps>) => {
       let newY;
 
       if(ys[i]>height) {
-        xs = (new Array<number>(maxRainCount).fill(0)).map((d) => {return width*Math.random()});
-        ys[i]=0;
+        xs[i] = width*Math.random();
+        ys[i]=-rainLengths[i];
       }
 
       newY = ys[i] + rainLengths[i];
 
       p.line(xs[i], ys[i], xs[i], newY);
 
-      ys[i] = newY;
+      ys[i] = ys[i] + 100*speed;
     }
 
   }
@@ -146,7 +146,7 @@ const Interface: React.FC = () => {
   const [doveXY, setDoveXY] = useState<XY>({x: -cageWidth/2, y: 0})
   const [bird2XY, setBird2XY] = useState<XY>({x: cageWidth/2 - iconSize, y: 0})
   const [synthXY, setSynthXY] = useState<XY>({x: cageWidth/2 - iconSize, y: cageWidth - iconSize})
-  const [speed, setspeed] = useState(1);
+  const [speed, setspeed] = useState(1.5);
   const [pause, setPause] = useState(false);
   const [clear, setClear] = useState(false);
   const handleRainChange = (event: Event, value: number | number[], activeThumb: number) => {
