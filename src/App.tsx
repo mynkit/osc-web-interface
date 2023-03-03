@@ -27,7 +27,7 @@ type MySketchProps = SketchProps & {
 
 const sketch: Sketch<MySketchProps> = (p: P5CanvasInstance<MySketchProps>) => {
   let width: number = p.windowWidth;
-  let height: number = p.windowHeight;
+  let height: number = window.screen.availHeight;
   let sizeTras: number = p.min(width, height) / 870;
   let pause: boolean = false;
   let clear: boolean = false;
