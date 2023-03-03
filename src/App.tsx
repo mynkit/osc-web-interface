@@ -9,7 +9,6 @@ import { MdOutlineBubbleChart } from 'react-icons/md';
 import { GiModernCity, GiHummingbird, GiSeagull, GiSwallow } from 'react-icons/gi';
 import { FaDove, FaCrow } from 'react-icons/fa'
 import Draggable from 'react-draggable';
-import { useWindowDimensions } from './utils/windowDimensions';
 import './App.css';
 import {
   P5CanvasInstance,
@@ -122,7 +121,8 @@ const Interface: React.FC = () => {
   const nodeRef3 = useRef(null);
 
   // サイズ調整
-  const { width, height } = useWindowDimensions();
+  const width = document.documentElement.clientWidth;
+  const height = document.documentElement.clientHeight;
   const cageWidth = Math.min(width, height) * 0.7;
   const iconSize = Math.min(cageWidth*0.15, 60);
   const minX = -cageWidth/2;
