@@ -148,41 +148,6 @@ const sketch: Sketch<MySketchProps> = (p: P5CanvasInstance<MySketchProps>) => {
         trueCircles[i] = p.random(0.9, 1);
       }
     }
-    // 道路
-    // p.line(width/2, windowHeight/2, 0, windowHeight/2 + width/4);
-    // p.line(width/2, windowHeight/2, width, windowHeight/2 + width/4);
-    const seeds = [time, time+100]
-    for (let i=0; i<seeds.length; i++) {
-      let centerLinePos = ((seeds[i]*0.005)%1)**10*windowHeight;
-      let centerLineWidth = width/4;
-      let centerLineLength = 1.5*centerLinePos*width/windowHeight;
-  
-      p.line(
-        width/2 - centerLinePos/windowHeight*centerLineWidth/2,
-        windowHeight/2 + centerLinePos,
-        width/2 + centerLinePos/windowHeight*centerLineWidth/2,
-        windowHeight/2 + centerLinePos,
-      );
-      p.line(
-        width/2 + centerLinePos/windowHeight*centerLineWidth/2,
-        windowHeight/2 + centerLinePos,
-        width/2 + (centerLinePos+centerLineLength)/windowHeight*centerLineWidth/2,
-        windowHeight/2 + (centerLinePos+centerLineLength),
-      );
-      p.line(
-        width/2 + (centerLinePos+centerLineLength)/windowHeight*centerLineWidth/2,
-        windowHeight/2 + (centerLinePos+centerLineLength),
-        width/2 - (centerLinePos+centerLineLength)/windowHeight*centerLineWidth/2,
-        windowHeight/2 + (centerLinePos+centerLineLength),
-      );
-      p.line(
-        width/2 - (centerLinePos+centerLineLength)/windowHeight*centerLineWidth/2,
-        windowHeight/2 + (centerLinePos+centerLineLength),
-        width/2 - centerLinePos/windowHeight*centerLineWidth/2,
-        windowHeight/2 + centerLinePos,
-      );
-    }
-
     time++;
   }
 }
