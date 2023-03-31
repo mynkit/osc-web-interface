@@ -20,6 +20,8 @@ private ipの取得(Mac)
 
 ```sh
 ifconfig | grep "inet 192.168." | awk '{print $2}'
+# 直接.envファイルに書き込みたい場合
+echo -n REACT_APP_PRIVATE_IP= > .env && ifconfig | grep "inet 192.168." | awk '{print $2}' >> .env
 ```
 
 ## websocket server & osc sender
